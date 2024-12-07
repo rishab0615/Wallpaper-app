@@ -1,5 +1,6 @@
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
+import 'dart:io';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:wallpaperapp/controller/apiOperation.dart';
 import 'package:wallpaperapp/model/photosModell.dart';
@@ -25,28 +26,19 @@ class _HomeScreenState extends State<HomeScreen> {
   final ScrollController _scrollController = ScrollController();
   bool hasStoragePermission = false;
 
-  Future<void> requestPermissions() async {
-    AndroidDeviceInfo build = await DeviceInfoPlugin().androidInfo;
+  // Request permission function
 
-    if (build.version.sdkInt >= 30) {
-      var status = await Permission.manageExternalStorage.request();
-      setState(() {
-        hasStoragePermission = status.isGranted;
-      });
-    } else {
-      var status = await Permission.storage.request();
-      setState(() {
-        hasStoragePermission = status.isGranted;
-      });
-    }
+  Future<bool> requestStoragePermission() async {
+    // Request storage permission based on the Android version
+    Permission permission = (Platform.isAndroid && (await Permission.storage.isGranted || await Permission.manageExternalStorage.isGranted))
+        ? Permission.storage
+        : Permission.manageExternalStorage;
 
-    if (!hasStoragePermission) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Storage permission is required to download or share images.'),
-        ),
-      );
-    }
+    final status = await permission.request();
+
+
+
+    return status.isGranted;
   }
 
   Future<void> getCatDetails() async {
@@ -96,7 +88,10 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    requestPermissions();
+    // Request permission after the widget tree has been built
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      requestStoragePermission(); // Request permission after widget initialization
+    });
     getCatDetails();
     getTrendingWallpapers();
 
@@ -117,6 +112,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -134,7 +130,6 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             Customsearchbar(),
             Container(
-
               margin: EdgeInsets.symmetric(vertical: 20),
               height: 60,
               width: MediaQuery.of(context).size.width,
@@ -153,7 +148,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: GridView.builder(
                   controller: _scrollController,
                   physics: BouncingScrollPhysics(),
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  gridDelegate:
+                  SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 2,
                     crossAxisSpacing: 13,
                     mainAxisSpacing: 10,
@@ -191,16 +187,21 @@ class _HomeScreenState extends State<HomeScreen> {
                             child: Image.network(
                               trendinglist[index].imgsrc,
                               fit: BoxFit.cover,
-                              loadingBuilder: (context, child, loadingProgress) {
+                              loadingBuilder:
+                                  (context, child, loadingProgress) {
                                 if (loadingProgress == null) {
                                   return child;
                                 } else {
                                   return Center(
                                     child: CircularProgressIndicator(
                                       color: Colors.blue,
-                                      value: loadingProgress.expectedTotalBytes != null
-                                          ? loadingProgress.cumulativeBytesLoaded /
-                                          loadingProgress.expectedTotalBytes!
+                                      value: loadingProgress
+                                          .expectedTotalBytes !=
+                                          null
+                                          ? loadingProgress
+                                          .cumulativeBytesLoaded /
+                                          loadingProgress
+                                              .expectedTotalBytes!
                                           : null,
                                     ),
                                   );

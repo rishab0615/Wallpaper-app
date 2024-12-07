@@ -20,19 +20,7 @@ class Fullscreen extends StatefulWidget {
 
 class _FullscreenState extends State<Fullscreen> {
 
-  Future<bool> requestStoragePermission() async {
-    final status = await Permission.manageExternalStorage.request();
-    if (!status.isGranted) {
-      _showToast(
-        icon: Icons.error,
-        primaryColor: Colors.red,
-        secondaryColor: Colors.blue,
-        title: 'Permission Denied',
-        description: 'Storage permission is required.',
-      );
-    }
-    return status.isGranted;
-  }
+
 
   void _showToast({
     required IconData icon,
@@ -58,21 +46,21 @@ class _FullscreenState extends State<Fullscreen> {
       final isSet = await AsyncWallpaper.setWallpaper(
         url: widget.imgUrl,
         wallpaperLocation: AsyncWallpaper.HOME_SCREEN,
-        goToHome: true,
+        goToHome: false,
       );
 
       _showToast(
         icon: Icons.check,
-        primaryColor: Colors.white!,
-        secondaryColor: Colors.blue,
+        primaryColor: Colors.green,
+        secondaryColor: Colors.white,
         title: 'Success',
         description: isSet ? 'Wallpaper set successfully!' : 'Failed to set wallpaper.',
       );
     } catch (e) {
       _showToast(
         icon: Icons.error,
-        primaryColor: Colors.white70,
-        secondaryColor: Colors.red,
+        primaryColor: Colors.red,
+        secondaryColor: Colors.blue,
         title: 'Error',
         description: 'Failed to set wallpaper: $e',
       );
@@ -80,7 +68,7 @@ class _FullscreenState extends State<Fullscreen> {
   }
 
   Future<void> downloadWallpaper() async {
-    if (!await requestStoragePermission()) return;
+    // if (!await requestStoragePermission()) return;
 
     try {
       final response = await Dio().get(
@@ -88,7 +76,7 @@ class _FullscreenState extends State<Fullscreen> {
         options: Options(responseType: ResponseType.bytes),
       );
 
-      final result = await ImageGallerySaver.saveImage(
+      await ImageGallerySaver.saveImage(
         Uint8List.fromList(response.data),
         quality: 60,
         name: "downloaded_wallpaper",
@@ -96,9 +84,9 @@ class _FullscreenState extends State<Fullscreen> {
 
       _showToast(
         icon: Icons.check,
-        primaryColor: Colors.white!,
+        primaryColor: Colors.green,
         secondaryColor: Colors.blue,
-        title: 'Image downloaded',
+        title: 'Downloaded',
         description: 'Check your gallery!',
       );
     } catch (e) {
@@ -113,7 +101,7 @@ class _FullscreenState extends State<Fullscreen> {
   }
 
   Future<void> shareImage() async {
-    if (!await requestStoragePermission()) return;
+    // if (!await requestStoragePermission()) return;
 
     try {
       final response = await Dio().get(
